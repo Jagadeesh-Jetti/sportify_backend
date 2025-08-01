@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    /* ====== FILE STRUCTURE ====== */
+    "rootDir": "./src", // Where your source TypeScript files live
+    "outDir": "./dist", // Where compiled JavaScript goes after build
+
+    /* ====== JAVASCRIPT TARGET ====== */
+    "target": "ES2020", // Compile to JS features supported by Node.js 16+
+    "module": "CommonJS", // Use CommonJS for compatibility with most Node libs
+    "moduleResolution": "Node", // How TS finds modules (Node.js style resolution)
+
+    /* ====== NODE ENVIRONMENT ====== */
+    "esModuleInterop": true, // Allows default import syntax for CommonJS modules
+    "types": ["node"], // Load Node.js type definitions (e.g., process, fs)
+
+    /* ====== DEBUGGING ====== */
+    "sourceMap": true, // Generate .map files for debugging TS in Node
+    "skipLibCheck": true, // Skip type-checking for dependencies (speeds up build)
+
+    /* ====== TYPE CHECKING STRICTNESS ====== */
+    "strict": false, // OFF for now so you can write JS-style in .ts
+    "noImplicitAny": false // Allow variables without explicit types
+  },
+
+  /* ====== INCLUDED/EXCLUDED FILES ====== */
+  "include": ["src"], // Only compile files from src/
+  "exclude": ["node_modules", "dist"] // Ignore dependencies & compiled output
+  /* uncomment when typescript is fully running */
+  //   "strict": true,
+  // "noImplicitAny": true,
+  // "exactOptionalPropertyTypes": true,
+  // "noUncheckedIndexedAccess": true
+}
