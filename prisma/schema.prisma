@@ -13,10 +13,163 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  MERCHANT
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 model User {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String  @unique
   password  String
+  phone     String? @unique
+  avatarUrl String?
+  bio       String?
+  role      Role    @default(USER)
+
+  preferredSports        Sport[]    @relation("UserSports")
+  bookings               Booking[]
+  reviews                Review[]
+  activitiesParticipated Activity[] @relation("ActivityParticipants")
+  activitiesHosted       Activity[] @relation("HostedActivities")
+  venues                 Venue[] //if merchant owns venues
+
+  loyaltyPoints Int      @default(0)
+  coupons       Coupon[] @relation("UserCoupons")
+
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([email])
+}
+
+//Sports
+model Sport {
+  id               String     @id @default(uuid())
+  name             String     @unique
+  preferredByUsers User[]     @relation("UserSports")
+  venues           Venue[]
+  bookings         Booking[]
+  activities       Activity[]
+
+  @@index([name])
+}
+
+//Venues
+model Venue {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  location    String
+  images      String[]
+  owner       User      @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  sports      Sport[]
+  bookings    Booking[]
+  reviews     Review[]
+
+  openingHour         Int
+  closingHour         Int
+  slotDurationMinutes Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([location])
+}
+
+//Bookings
+model Booking {
+  id        String        @id @default(uuid())
+  user      User          @relation(fields: [userId], references: [id])
+  userId    String
+  venue     Venue         @relation(fields: [venueId], references: [id])
+  venueId   String
+  sport     Sport         @relation(fields: [sportId], references: [id])
+  sportId   String
+  status    BookingStatus @default(PENDING)
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+  payment   Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([startTime])
+  @@index([endTime])
+}
+
+//Payments
+model Payment {
+  id        String        @id @default(uuid())
+  booking   Booking       @relation(fields: [bookingId], references: [id])
+  bookingId String        @unique
+  amount    Float
+  status    PaymentStatus @default(PENDING)
+  method    String?
+  createdAt DateTime      @default(now())
+}
+
+//Reviews
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  venue     Venue    @relation(fields: [venueId], references: [id])
+  venueId   String
+  createdAt DateTime @default(now())
+}
+
+//Activity
+model Activity {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  sport        Sport    @relation(fields: [sportId], references: [id])
+  sportId      String
+  host         User     @relation("HostedActivities", fields: [hostId], references: [id])
+  hostId       String
+  participants User[]   @relation("ActivityParticipants")
+  createdAt    DateTime @default(now())
+}
+
+//Coupons
+model Coupon {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  discount   Float
+  expiryDate DateTime
+  users      User[]   @relation("UserCoupons")
+}
+
+//Notifications
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  read      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
   createdAt DateTime @default(now())
 }
