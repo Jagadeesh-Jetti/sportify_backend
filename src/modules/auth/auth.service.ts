@@ -18,17 +18,20 @@ interface LoginInput {
 }
 
 export const signup = async (
-  data: SignupInput
+  name: string,
+  email: string,
+  password: string,
+  role: 'USER' | 'MERCHANT' = 'USER'
 ): Promise<{ user: User; token: string }> => {
   const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
+    where: { email: email },
   });
   if (existingUser) throw new Error('Email already taken');
 
-  const hashedPassword = await bcrypt.hash(data.password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
-    data: { ...data, password: hashedPassword },
+    data: { name, email, password: hashedPassword, role },
   });
 
   const token = generateToken({ id: user.id, role: user.role });
