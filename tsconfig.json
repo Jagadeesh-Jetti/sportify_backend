@@ -12,6 +12,7 @@
     /* ====== NODE ENVIRONMENT ====== */
     "esModuleInterop": true, // Allows default import syntax for CommonJS modules
     "types": ["node"], // Load Node.js type definitions (e.g., process, fs)
+    "typeRoots": ["./node_modules/@types", "./src/types"],
 
     /* ====== DEBUGGING ====== */
     "sourceMap": true, // Generate .map files for debugging TS in Node
