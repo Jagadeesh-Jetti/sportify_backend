@@ -10,11 +10,24 @@ export const createUserHandler = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllUsersHandler = async (_req: Request, res: Response) => {
+export const getMyProfile = async (req: Request, res: Response) => {
   try {
-    const users = await userService.getAllUsers();
-    res.status(201).json({ message: 'User retrieved successfully', users });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const userId = req.user?.id;
+    const profile = await userService.getMyProfileService(userId);
+    res.json(profile);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateMyProfile = async (req: Request, res: Response) => {
+  try {
+    const updated = await userService.updateMyProfileService(
+      req.user.id,
+      req.body
+    );
+    res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 };
