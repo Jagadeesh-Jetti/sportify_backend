@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import {
   createVenueService,
+  defineSlotsService,
   deleteVenueService,
   getAllVenuesService,
+  getAvailableSlotsService,
   getMyVenuesService,
   getVenuesByIdService,
   updateVenueService,
@@ -78,4 +80,52 @@ export const deleteVenueHandler = async (req: Request, res: Response) => {
 
 export const assignSportsToVenueHandler = () => {};
 
-export const defineSlotsHandler = () => {};
+export const defineSlotsHandler = async (req: Request, res: Response) => {
+  try {
+    const { startTime, endTime, slotDuration, date } = req.body;
+    const venueId = req.params.venueId;
+    const ownerId = (req as any).user.id; // Replace with your AuthRequest type later
+
+    if (!startTime || !endTime || !slotDuration || !date) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    const slots = await defineSlotsService(
+      venueId,
+      startTime,
+      endTime,
+      slotDuration,
+      ownerId,
+      parsedDate
+    );
+
+    res.status(201).json({
+      message: 'Slots defined successfully',
+      slots,
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const getAvailableSlotsHandler = async (req: Request, res: Response) => {
+  try {
+    const venueId = req.params.venueId;
+    const { date } = req.query;
+
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ error: 'Date is required' });
+    }
+
+    const result = await getAvailableSlotsService(venueId, date);
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

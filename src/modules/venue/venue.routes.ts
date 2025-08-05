@@ -5,6 +5,7 @@ import {
   defineSlotsHandler,
   deleteVenueHandler,
   getAllVenuesHandler,
+  getAvailableSlotsHandler,
   getMyVenuesHandler,
   getVenueByIdHandler,
   updateVenueHandler,
@@ -32,5 +33,6 @@ router.post('/:id/slots', requireRole(['MERCHANT']), defineSlotsHandler);
 
 router.get('/', getAllVenuesHandler);
 router.get('/:id', getVenueByIdHandler);
+router.get('/:venueId/available-slots', requireAuth, getAvailableSlotsHandler);
 
 export default router;

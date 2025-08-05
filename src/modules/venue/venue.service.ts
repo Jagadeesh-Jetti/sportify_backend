@@ -1,11 +1,28 @@
 import prisma from '../../config/db';
+import { addMinutes, format } from 'date-fns';
 
-export const createVenueService = async (ownerId: string, data: any) => {
+export const createVenueService = async (
+  ownerId: string,
+  data: {
+    name: string;
+    description?: string;
+    location: string;
+    images: string[];
+    openingHour: number;
+    closingHour: number;
+    slotDurationMinutes: number;
+    sports: string[];
+  }
+) => {
   return prisma.venue.create({
     data: {
       ...data,
       ownerId,
+      sports: {
+        connect: data.sports.map((sportName) => ({ name: sportName })),
+      },
     },
+    include: { sports: true },
   });
 };
 
@@ -32,7 +49,16 @@ export const getVenuesByIdService = async (venueId: string) => {
 export const updateVenueService = async (
   venueId: string,
   ownerId: string,
-  data: any
+  data: {
+    name?: string;
+    description?: string;
+    location?: string;
+    images?: string[];
+    openingHour?: number;
+    closingHour?: number;
+    slotDurationMinutes?: number;
+    sports?: string[];
+  }
 ) => {
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
 
@@ -42,7 +68,19 @@ export const updateVenueService = async (
 
   return prisma.venue.update({
     where: { id: venueId },
-    data,
+    data: {
+      name: data.name,
+      description: data.description,
+      location: data.location,
+      images: data.images,
+      openingHour: data.openingHour,
+      closingHour: data.closingHour,
+      slotDurationMinutes: data.slotDurationMinutes,
+      sports: data.sports
+        ? { set: data.sports.map((id) => ({ id })) }
+        : undefined,
+    },
+    include: { sports: true },
   });
 };
 
@@ -56,4 +94,104 @@ export const deleteVenueService = async (venueId: string, ownerId: string) => {
   return prisma.venue.delete({
     where: { id: venueId },
   });
+};
+
+export const defineSlotsService = async (
+  venueId: string,
+  startTime: string,
+  endTime: string,
+  slotDuration: number,
+  ownerId: string,
+  date: Date
+) => {
+  const venue = await prisma.venue.findUnique({
+    where: { id: venueId },
+    select: {
+      ownerId: true,
+      openingHour: true,
+      closingHour: true,
+      slotDurationMinutes: true,
+    },
+  });
+
+  if (!venue) {
+    throw new Error('Venue not found');
+  }
+
+  if (venue.ownerId !== ownerId) {
+    throw new Error('Not authorized to define slots for this venue');
+  }
+
+  // Convert times into Date objects
+  let current = new Date(`1970-01-01T${startTime}:00`);
+  let end = new Date(`1970-01-01T${endTime}:00`);
+
+  const slots: { venueId: string; time: string; date: Date }[] = [];
+
+  while (current < end) {
+    slots.push({
+      venueId,
+      time: format(current, 'HH:mm'),
+      date,
+    });
+    current = addMinutes(current, slotDuration);
+  }
+
+  // Insert into DB (skip duplicates)
+  await prisma.slot.createMany({
+    data: slots,
+    skipDuplicates: true,
+  });
+
+  return slots;
+};
+
+export const getAvailableSlotsService = async (
+  venueId: string,
+  date: string // accept string from query
+) => {
+  const parsedDate = new Date(date); // convert to Date object for Prisma
+  if (isNaN(parsedDate.getTime())) {
+    throw new Error('Invalid date format');
+  }
+
+  // Get all slots
+  const allSlots = await prisma.slot.findMany({
+    where: {
+      venueId,
+      date: parsedDate,
+    },
+    select: {
+      id: true,
+      time: true,
+    },
+    orderBy: {
+      time: 'asc',
+    },
+  });
+
+  // Get booked slots
+  const bookedSlots = await prisma.booking.findMany({
+    where: {
+      venueId,
+      date: parsedDate,
+    },
+    select: {
+      startTime: true,
+    },
+  });
+
+  const bookedTimes = bookedSlots.map((b) =>
+    b.startTime.toISOString().substring(11, 16)
+  );
+
+  const availableSlots = allSlots.filter(
+    (slot) => !bookedTimes.includes(format(slot.time, 'HH:mm'))
+  );
+
+  return {
+    totalSlots: allSlots.length,
+    bookedSlots: bookedTimes.length,
+    availableSlots,
+  };
 };
