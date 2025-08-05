@@ -91,6 +91,7 @@ model Venue {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Slot      Slot[]
 
   @@index([name])
   @@index([location])
@@ -110,6 +111,8 @@ model Booking {
   startTime DateTime
   endTime   DateTime
   payment   Payment?
+  slot      Slot?         @relation(fields: [slotId], references: [id])
+  slotId    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -117,6 +120,18 @@ model Booking {
   @@index([date])
   @@index([startTime])
   @@index([endTime])
+}
+
+model Slot {
+  id        String    @id @default(uuid())
+  venue     Venue     @relation(fields: [venueId], references: [id])
+  venueId   String
+  time      DateTime
+  date      DateTime?
+  createdAt DateTime  @default(now())
+  Booking   Booking[]
+
+  @@index([venueId, date])
 }
 
 //Payments
