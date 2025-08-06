@@ -57,7 +57,7 @@ export const updateVenueService = async (
     openingHour?: number;
     closingHour?: number;
     slotDurationMinutes?: number;
-    sports?: string[];
+    sports?: string[]; // sport names
   }
 ) => {
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
@@ -77,7 +77,12 @@ export const updateVenueService = async (
       closingHour: data.closingHour,
       slotDurationMinutes: data.slotDurationMinutes,
       sports: data.sports
-        ? { set: data.sports.map((id) => ({ id })) }
+        ? {
+            set: [], // clear old
+            connect: data.sports.map((sportName) => ({
+              name: sportName, // connect by name
+            })),
+          }
         : undefined,
     },
     include: { sports: true },

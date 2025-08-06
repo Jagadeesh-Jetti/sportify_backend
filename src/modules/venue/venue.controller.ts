@@ -57,7 +57,7 @@ export const getMyVenuesHandler = async (req: Request, res: Response) => {
 export const updateVenueHandler = async (req: Request, res: Response) => {
   try {
     const updatedVenue = await updateVenueService(
-      req.params.id,
+      req.params.venueId,
       req.user.id,
       req.body
     );
@@ -65,7 +65,8 @@ export const updateVenueHandler = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: 'Venue updated successfully', updatedVenue });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    const statusCode = error.message.includes('Not authorized') ? 403 : 400;
+    res.status(statusCode).json({ error: error.message });
   }
 };
 
