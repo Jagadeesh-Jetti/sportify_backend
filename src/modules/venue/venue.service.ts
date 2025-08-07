@@ -45,7 +45,6 @@ export const getVenuesByIdService = async (venueId: string) => {
     include: { sports: true, reviews: true, bookings: true },
   });
 };
-
 export const updateVenueService = async (
   venueId: string,
   ownerId: string,
@@ -66,6 +65,24 @@ export const updateVenueService = async (
     throw new Error('Not authorized to update this venue');
   }
 
+  let connectSports = undefined;
+
+  if (data.sports && data.sports.length > 0) {
+    // Fetch sport IDs from names
+    const sportRecords = await prisma.sport.findMany({
+      where: { name: { in: data.sports } },
+    });
+
+    if (sportRecords.length !== data.sports.length) {
+      throw new Error('Some sports not found');
+    }
+
+    connectSports = {
+      set: [], // clear old
+      connect: sportRecords.map((sport) => ({ id: sport.id })),
+    };
+  }
+
   return prisma.venue.update({
     where: { id: venueId },
     data: {
@@ -76,14 +93,7 @@ export const updateVenueService = async (
       openingHour: data.openingHour,
       closingHour: data.closingHour,
       slotDurationMinutes: data.slotDurationMinutes,
-      sports: data.sports
-        ? {
-            set: [], // clear old
-            connect: data.sports.map((sportName) => ({
-              name: sportName, // connect by name
-            })),
-          }
-        : undefined,
+      sports: connectSports,
     },
     include: { sports: true },
   });
