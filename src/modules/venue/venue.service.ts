@@ -1,28 +1,22 @@
 import prisma from '../../config/db';
 import { addMinutes, format } from 'date-fns';
 
-export const createVenueService = async (
-  ownerId: string,
-  data: {
-    name: string;
-    description?: string;
-    location: string;
-    images: string[];
-    openingHour: number;
-    closingHour: number;
-    slotDurationMinutes: number;
-    sports: string[];
-  }
-) => {
+export const createVenueService = async (data, ownerId) => {
   return prisma.venue.create({
     data: {
-      ...data,
+      name: data.name,
+      description: data.description,
+      location: data.location,
+      images: data.images,
+      openingHour: data.openingHour,
+      closingHour: data.closingHour,
+      slotDurationMinutes: data.slotDurationMinutes,
       ownerId,
       sports: {
-        connect: data.sports.map((sportName) => ({ name: sportName })),
+        connect: data.sports.map((id) => ({ id })),
       },
     },
-    include: { sports: true },
+    include: { sports: true, owner: true },
   });
 };
 
@@ -45,55 +39,25 @@ export const getVenuesByIdService = async (venueId: string) => {
     include: { sports: true, reviews: true, bookings: true },
   });
 };
+
 export const updateVenueService = async (
   venueId: string,
   ownerId: string,
-  data: {
-    name?: string;
-    description?: string;
-    location?: string;
-    images?: string[];
-    openingHour?: number;
-    closingHour?: number;
-    slotDurationMinutes?: number;
-    sports?: string[]; // sport names
-  }
+  data
 ) => {
-  const venue = await prisma.venue.findUnique({ where: { id: venueId } });
+  const existing = await prisma.venue.findUnique({ where: { id: venueId } });
 
-  if (!venue || venue.ownerId !== ownerId) {
+  if (!existing || existing.ownerId !== ownerId) {
     throw new Error('Not authorized to update this venue');
-  }
-
-  let connectSports = undefined;
-
-  if (data.sports && data.sports.length > 0) {
-    // Fetch sport IDs from names
-    const sportRecords = await prisma.sport.findMany({
-      where: { name: { in: data.sports } },
-    });
-
-    if (sportRecords.length !== data.sports.length) {
-      throw new Error('Some sports not found');
-    }
-
-    connectSports = {
-      set: [], // clear old
-      connect: sportRecords.map((sport) => ({ id: sport.id })),
-    };
   }
 
   return prisma.venue.update({
     where: { id: venueId },
     data: {
-      name: data.name,
-      description: data.description,
-      location: data.location,
-      images: data.images,
-      openingHour: data.openingHour,
-      closingHour: data.closingHour,
-      slotDurationMinutes: data.slotDurationMinutes,
-      sports: connectSports,
+      ...data,
+      sports: data.sportsIds
+        ? { set: data.sportsIds.map((id) => ({ id })) }
+        : undefined,
     },
     include: { sports: true },
   });
