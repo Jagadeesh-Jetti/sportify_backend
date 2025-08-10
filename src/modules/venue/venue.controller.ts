@@ -57,7 +57,7 @@ export const getMyVenuesHandler = async (req: Request, res: Response) => {
 export const updateVenueHandler = async (req: Request, res: Response) => {
   try {
     const updatedVenue = await updateVenueService(
-      req.params.venueId,
+      req.params.id,
       req.user.id,
       req.body
     );
@@ -84,7 +84,7 @@ export const assignSportsToVenueHandler = () => {};
 export const defineSlotsHandler = async (req: Request, res: Response) => {
   try {
     const { startTime, endTime, slotDuration, date } = req.body;
-    const venueId = req.params.venueId;
+    const venueId = req.params.id;
     const ownerId = (req as any).user.id; // Replace with your AuthRequest type later
 
     if (!startTime || !endTime || !slotDuration || !date) {

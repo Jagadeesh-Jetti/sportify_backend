@@ -1,7 +1,7 @@
 import prisma from '../../config/db';
 import { addMinutes, format } from 'date-fns';
 
-export const createVenueService = async (data, ownerId) => {
+export const createVenueService = async (ownerId, data) => {
   return prisma.venue.create({
     data: {
       name: data.name,
@@ -105,12 +105,14 @@ export const defineSlotsService = async (
   let current = new Date(`1970-01-01T${startTime}:00`);
   let end = new Date(`1970-01-01T${endTime}:00`);
 
-  const slots: { venueId: string; time: string; date: Date }[] = [];
+  const slots: { venueId: string; time: Date; date: Date }[] = [];
 
   while (current < end) {
     slots.push({
       venueId,
-      time: format(current, 'HH:mm'),
+      time: new Date(
+        `${date.toISOString().split('T')[0]}T${format(current, 'HH:mm')}:00Z`
+      ),
       date,
     });
     current = addMinutes(current, slotDuration);

@@ -31,8 +31,8 @@ router.post(
 );
 router.post('/:id/slots', requireRole(['MERCHANT']), defineSlotsHandler);
 
-router.get('/', getAllVenuesHandler);
-router.get('/:id', getVenueByIdHandler);
+router.get('/', requireAuth, getAllVenuesHandler);
+router.get('/:id', requireAuth, getVenueByIdHandler);
 router.get('/:venueId/available-slots', requireAuth, getAvailableSlotsHandler);
 
 export default router;
