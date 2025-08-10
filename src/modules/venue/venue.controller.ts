@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import {
+  assignSportsToVenueService,
   createVenueService,
   defineSlotsService,
   deleteVenueService,
@@ -79,7 +80,23 @@ export const deleteVenueHandler = async (req: Request, res: Response) => {
   }
 };
 
-export const assignSportsToVenueHandler = () => {};
+export const assignSportsToVenueHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const updatedVenue = await assignSportsToVenueService(
+      req.params.id,
+      req.user.id,
+      req.body.sportsIds
+    );
+    res
+      .status(200)
+      .json({ message: 'Sports assigned successfully', updatedVenue });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 export const defineSlotsHandler = async (req: Request, res: Response) => {
   try {

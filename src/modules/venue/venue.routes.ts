@@ -24,6 +24,7 @@ router.delete(
   deleteVenueHandler
 );
 router.get('/me', requireAuth, requireRole(['MERCHANT']), getMyVenuesHandler);
+
 router.post(
   '/:id/sports',
   requireRole(['MERCHANT']),

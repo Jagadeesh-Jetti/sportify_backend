@@ -1,7 +1,7 @@
 import prisma from '../../config/db';
 import { addMinutes, format } from 'date-fns';
 
-export const createVenueService = async (ownerId, data) => {
+export const createVenueService = async (ownerId: string, data: any) => {
   return prisma.venue.create({
     data: {
       name: data.name,
@@ -13,7 +13,7 @@ export const createVenueService = async (ownerId, data) => {
       slotDurationMinutes: data.slotDurationMinutes,
       ownerId,
       sports: {
-        connect: data.sports.map((id) => ({ id })),
+        connect: data.sports.map((id: string) => ({ id })),
       },
     },
     include: { sports: true, owner: true },
@@ -43,7 +43,7 @@ export const getVenuesByIdService = async (venueId: string) => {
 export const updateVenueService = async (
   venueId: string,
   ownerId: string,
-  data
+  data: any
 ) => {
   const existing = await prisma.venue.findUnique({ where: { id: venueId } });
 
@@ -56,7 +56,7 @@ export const updateVenueService = async (
     data: {
       ...data,
       sports: data.sportsIds
-        ? { set: data.sportsIds.map((id) => ({ id })) }
+        ? { set: data.sportsIds.map((id: string) => ({ id })) }
         : undefined,
     },
     include: { sports: true },
@@ -102,17 +102,17 @@ export const defineSlotsService = async (
   }
 
   // Convert times into Date objects
-  let current = new Date(`1970-01-01T${startTime}:00`);
-  let end = new Date(`1970-01-01T${endTime}:00`);
+  let current = new Date(
+    `${date.toISOString().split('T')[0]}T${startTime}:00Z`
+  );
+  let end = new Date(`${date.toISOString().split('T')[0]}T${endTime}:00Z`);
 
   const slots: { venueId: string; time: Date; date: Date }[] = [];
 
   while (current < end) {
     slots.push({
       venueId,
-      time: new Date(
-        `${date.toISOString().split('T')[0]}T${format(current, 'HH:mm')}:00Z`
-      ),
+      time: new Date(current),
       date,
     });
     current = addMinutes(current, slotDuration);
@@ -125,6 +125,26 @@ export const defineSlotsService = async (
   });
 
   return slots;
+};
+
+export const assignSportsToVenueService = async (
+  venueId: string,
+  ownerId: string,
+  sportsIds: string[]
+) => {
+  const venue = await prisma.venue.findUnique({ where: { id: venueId } });
+
+  if (!venue || venue.ownerId !== ownerId) {
+    throw new Error('Not authorized to assign sports to this venue');
+  }
+
+  return prisma.venue.update({
+    where: { id: venueId },
+    data: {
+      sports: { set: sportsIds.map((id) => ({ id })) },
+    },
+    include: { sports: true },
+  });
 };
 
 export const getAvailableSlotsService = async (
@@ -162,9 +182,7 @@ export const getAvailableSlotsService = async (
     },
   });
 
-  const bookedTimes = bookedSlots.map((b) =>
-    b.startTime.toISOString().substring(11, 16)
-  );
+  const bookedTimes = bookedSlots.map((b) => format(b.startTime, 'HH:mm'));
 
   const availableSlots = allSlots.filter(
     (slot) => !bookedTimes.includes(format(slot.time, 'HH:mm'))
