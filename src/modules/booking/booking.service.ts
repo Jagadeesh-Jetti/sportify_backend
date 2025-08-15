@@ -63,7 +63,7 @@ export const getUserBookingsService = async (userId) => {
   });
 };
 
-export const getVenueBookingService = async (venueId, ownerId) => {
+export const getVenueBookingsService = async (venueId, ownerId) => {
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
 
   if (!venue || venue.ownerId !== ownerId) {

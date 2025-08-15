@@ -4,7 +4,7 @@ import {
   cancelBookingService,
   getUserBookingsService,
   getVenueBookingsService,
-} from '../services/booking.service';
+} from '../booking/booking.service';
 
 export const createBooking = async (req: Request, res: Response) => {
   try {
